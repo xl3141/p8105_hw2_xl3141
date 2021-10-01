@@ -1,0 +1,47 @@
+---
+title: "p8105_hw2_xl3141"
+author: "Xinyuan Liu"
+date: "2021/10/1"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+mr_trash_wheel_df <-
+  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:N408", sheet = 1) %>% 
+  janitor::clean_names() %>% 
+  drop_na(dumpster) %>% 
+  mutate(across(sports_balls, round, 0))
+```
+
+```{r, median, echo=TRUE, eval=FALSE}
+wheel_median <- 
+   mr_trash_wheel_df %>% 
+   select(year, sports_balls) %>% 
+   filter(year == "2017") 
+median(pull(wheel_median, sports_balls))
+```
+
+In the Mr. trash wheel dataset, we have in total `r nrow(mr_trash_wheel_df)` rows and `r ncol(mr_trash_wheel_df)` columns. The variables that we are interested includes `r names(mr_trash_wheel_df)`. The median number of sports ball in a dumpster in 2017 is 8.
+
+```{r }
+precip_2019_df <- 
+  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B14", sheet = 4) %>% 
+  janitor::clean_names() %>% 
+  drop_na() %>% 
+  mutate(year = "2019")
+
+precip_2018_df <- 
+  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B15", sheet = 5) %>% 
+  janitor::clean_names() %>% 
+  drop_na() %>% 
+  mutate(year = "2018")
+  
+precip_1819_df <- 
+  bind_rows(precip_2018_df,precip_2019_df) %>% 
+  mutate(month = month.name[month])
+
+```
+
+We have `r nrow(precip_1819_df)` months' precipitation data for 2018 and 2019 in total. The total precipitation in 2018 is `r sum(pull(precip_2018_df, total))`, and the total precipitation in 2019 is `r sum(pull(precip_2019_df, total))`.
