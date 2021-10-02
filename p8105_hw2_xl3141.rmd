@@ -4,15 +4,16 @@ author: "Xinyuan Liu"
 date: "2021/10/1"
 output: github_document
 ---
+## Problem 1
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readxl)
 mr_trash_wheel_df <-
   read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:N408", sheet = 1) %>% 
   janitor::clean_names() %>% 
-  drop_na(dumpster) %>% 
-  mutate(across(sports_balls, round, 0))
+  drop_na(dumpster) %>% ##omit rows that do not include dumpster-specific data
+  mutate(across(sports_balls, round, 0)) ##round the number of sports balls to the nearest integer
 ```
 
 ```{r, median, echo=TRUE, eval=FALSE}
@@ -20,28 +21,126 @@ wheel_median <-
    mr_trash_wheel_df %>% 
    select(year, sports_balls) %>% 
    filter(year == "2017") 
-median(pull(wheel_median, sports_balls))
+median(pull(wheel_median, sports_balls)) ## calculate the median number of sports balls in a dumpster in 2017
 ```
 
-In the Mr. trash wheel dataset, we have in total `r nrow(mr_trash_wheel_df)` rows and `r ncol(mr_trash_wheel_df)` columns. The variables that we are interested includes `r names(mr_trash_wheel_df)`. The median number of sports ball in a dumpster in 2017 is 8.
+In the Mr. trash wheel dataset, we have in total `r nrow(mr_trash_wheel_df)` rows and `r ncol(mr_trash_wheel_df)` columns. The variables that we are interested includes _`r names(mr_trash_wheel_df)`_. The median number of sports ball in a dumpster in 2017 is 8.
 
-```{r }
+```{r message=FALSE, warning=FALSE}
 precip_2019_df <- 
   read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B14", sheet = 4) %>% 
   janitor::clean_names() %>% 
-  drop_na() %>% 
-  mutate(year = "2019")
+  drop_na() %>% ## drop na rows
+  mutate(year = "2019") ##add variable "year"
 
 precip_2018_df <- 
   read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B15", sheet = 5) %>% 
   janitor::clean_names() %>% 
-  drop_na() %>% 
-  mutate(year = "2018")
+  drop_na() %>% ## drop na rows
+  mutate(year = "2018") ##add variable "year"
   
 precip_1819_df <- 
   bind_rows(precip_2018_df,precip_2019_df) %>% 
-  mutate(month = month.name[month])
+  mutate(month = month.name[month]) ##combine precipitation datasets and convert month to a character variable 
 
 ```
 
 We have `r nrow(precip_1819_df)` months' precipitation data for 2018 and 2019 in total. The total precipitation in 2018 is `r sum(pull(precip_2018_df, total))`, and the total precipitation in 2019 is `r sum(pull(precip_2019_df, total))`.
+
+
+## Problem 2
+
+```{r message=FALSE, warning=FALSE}
+pol_month_df <- 
+  read_csv("fivethirtyeight_datasets/pols-month.csv") %>% 
+  janitor::clean_names() %>% 
+  separate(mon, into = c("year", "month", "day")) %>% ##separate date into month, day, and year
+  mutate(month = month.name[as.numeric(month)]) %>% ## change numeric month into character
+  mutate(president = prez_gop + prez_dem) %>% ## merge columns "prez_gop" and "prez_dem"
+  select(-prez_gop, -prez_dem, -day)##remove column"prez_gop", "prez_dem", "day"
+  
+```
+
+"pol" dataset describes the number of national politicians who are democratic or republican at any given time. It has `r nrow(pol_month_df)` rows and `r ncol(pol_month_df)` columns. The variable includes _`r names(pol_month_df)`_. It includes the data from 1974 to 2015.
+
+```{r message=FALSE, warning=FALSE}
+snp_df <- 
+  read_csv("fivethirtyeight_datasets/snp.csv") %>% 
+  janitor::clean_names()%>% 
+  separate(date, into = c("month", "day", "year")) %>%  ##separate date into month, day, and year
+  select(-day) %>% ##remove "day" column
+  relocate("year", "month") %>% 
+  mutate(
+    year = as.numeric(year), 
+    year = ifelse(year > 40, year + 1900, year + 2000),
+    month = month.name[as.numeric(month)],
+    year = as.character(year)##make both month and year into character variable in order to merge the dataframe
+  )
+range(pull(snp_df, year))
+  
+unemploy_df <-
+  read_csv("fivethirtyeight_datasets/unemployment.csv") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    jan:dec,
+    names_to = "month",
+    values_to = "unemployment"
+    ) %>%  ## make the month into one column
+  relocate("year", "month") %>% 
+  mutate(
+    month = str_to_title(month), 
+    month = match(month, month.abb),
+    month = month.name[as.numeric(month)],
+    year = as.character(year) ##make both month and year into character variable in order to merge the dataframe
+    )
+```
+
+```{r message=FALSE, warning=FALSE}
+new_df_1 <- left_join(pol_month_df, snp_df, by = c("year" = "year", "month" = "month")) ## join "snp_df" into "pol_month_df"
+result_df <- left_join(new_df_1, unemploy_df, by = c("year" = "year", "month" = "month")) ## join the "unemploy_df" into "new_df_1"
+range(pull(result_df, year))
+```
+
+The result dataset has `r nrow(result_df)` rows and `r ncol(result_df)` columns. The variables includes _`r names(result_df)`_. It includes the data from 1947 to 2015.
+
+
+## Problem 3
+```{r message=FALSE, warning=FALSE}
+pop_baby_name_df <-
+  read_csv("Popular_Baby_Names.csv") %>% 
+  janitor::clean_names() %>%
+  mutate(
+    childs_first_name = str_to_title(childs_first_name), ## capitalize the first letter
+    ethnicity = recode(ethnicity, "ASIAN AND PACI" = "ASIAN AND PACIFIC ISLANDER", "BLACK NON HISP" = "BLACK NON HISPANIC", "WHITE NON HISP" = "WHITE NON HISPANIC")  ##make the name of same variable identical
+    ) %>% 
+  arrange(gender, ethnicity) %>% ## arrange according to gender and ethnicity
+  distinct() ## remove duplicated rows
+  
+olivia_fem_pop_df <- 
+  filter(pop_baby_name_df, childs_first_name == "Olivia" ) %>% 
+  select(-gender, -childs_first_name, -count) %>% 
+  pivot_wider(
+    names_from = "year_of_birth",
+    values_from = "rank"
+  ) %>% 
+  knitr::kable() ## produce the table for the popularity of "Olivia" in female for all ethnicity from 2011 to 2016
+olivia_fem_pop_df
+
+male_pop_df <- 
+  filter(pop_baby_name_df, gender == "MALE", rank <= 5) %>% 
+  select(-gender, -count) %>% 
+  pivot_wider(
+    names_from = "year_of_birth",
+    values_from = "rank"
+  ) %>% 
+  knitr::kable() ## produce the table for the top 5 names in male for all ethnicity from 2011 to 2016
+male_pop_df
+
+name_vs_pop_df <-
+  pop_baby_name_df %>% 
+  filter(year_of_birth == "2016", ethnicity == "WHITE NON HISPANIC", gender == "MALE") ##dataset with names of male white non-hispanic children born in 2016
+
+ggplot(name_vs_pop_df, aes(x = rank, y = count)) + geom_point() + xlab("rank in popularity") + ylab("number of children") + ggtitle("popularity of names for male white non-hispanic children born in 2016") ##scatterplot for number of children with a name against rank in popularity of that name
+ggsave("scatter_plot.pdf")
+```
+
