@@ -10,7 +10,7 @@ output: github_document
 library(tidyverse)
 library(readxl)
 mr_trash_wheel_df <-
-  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:N408", sheet = 1) %>% 
+  read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", range = "A2:N535", sheet = 1) %>% 
   janitor::clean_names() %>% 
   drop_na(dumpster) %>% ##omit rows that do not include dumpster-specific data
   mutate(across(sports_balls, round, 0)) ##round the number of sports balls to the nearest integer
@@ -28,13 +28,13 @@ In the Mr. trash wheel dataset, we have in total `r nrow(mr_trash_wheel_df)` row
 
 ```{r message=FALSE, warning=FALSE}
 precip_2019_df <- 
-  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B14", sheet = 4) %>% 
+  read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", range = "A2:B15", sheet = 6) %>% 
   janitor::clean_names() %>% 
   drop_na() %>% ## drop na rows
   mutate(year = "2019") ##add variable "year"
 
 precip_2018_df <- 
-  read_excel("Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = "A2:B15", sheet = 5) %>% 
+  read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", range = "A2:B15", sheet = 7) %>% 
   janitor::clean_names() %>% 
   drop_na() %>% ## drop na rows
   mutate(year = "2018") ##add variable "year"
@@ -140,7 +140,11 @@ name_vs_pop_df <-
   pop_baby_name_df %>% 
   filter(year_of_birth == "2016", ethnicity == "WHITE NON HISPANIC", gender == "MALE") ##dataset with names of male white non-hispanic children born in 2016
 
-ggplot(name_vs_pop_df, aes(x = rank, y = count)) + geom_point() + xlab("rank in popularity") + ylab("number of children") + ggtitle("popularity of names for male white non-hispanic children born in 2016") ##scatterplot for number of children with a name against rank in popularity of that name
+ggp_rank_num <- 
+  ggplot(name_vs_pop_df, aes(x = rank, y = count)) + 
+  geom_point() + xlab("rank in popularity") + 
+  ylab("number of children") + 
+  ggtitle("popularity of names for male white non-hispanic children born in 2016") ##scatterplot for number of children with a name against rank in popularity of that name
 ggsave("scatter_plot.pdf")
 ```
 
